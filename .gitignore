@@ -170,3 +170,4 @@ cython_debug/
 /evaluation_results
 #/predictions
 data
+!configs/data
