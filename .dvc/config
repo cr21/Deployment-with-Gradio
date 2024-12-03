@@ -1,0 +1,12 @@
+[core]
+    autostage = true
+    remote = s3_food_store
+['remote "gdrive"']
+    url = gdrive://1gEGtsCA_YYG119Mcl0WKiX_yNff_IVDs
+    gdrive_acknowledge_abuse = true
+    gdrive_client_id = <gdrive_client_id>
+    gdrive_client_secret = <gdrive_client_secret>
+['remote "s3_store"']
+    url = s3://pytorch-data-emlov4
+['remote "s3_food_store"']
+    url = s3://food-101-dataset-dvc

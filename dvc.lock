@@ -1,0 +1,96 @@
+schema: '2.0'
+stages:
+  train:
+    cmd: python3 src/train.py experiment=bird_classifier_ex +trainer.log_every_n_steps=1
+    deps:
+    - path: configs/experiment/bird_classifier_ex.yaml
+      hash: md5
+      md5: 3fdff6bc9598f68e40edc1e59c3de1ad
+      size: 912
+    - path: configs/experiment/dogbreed_ex.yaml
+      hash: md5
+      md5: b39abbbb42e1df38204dbbf7c23776ec
+      size: 892
+    - path: data
+      hash: md5
+      md5: 97508e4c8a46a85e3cd8e35c13f8a74e.dir
+      size: 66665399
+      nfiles: 1581
+    - path: src/train.py
+      hash: md5
+      md5: 1c9f56278ada54a5b045cf07bf231b11
+      size: 6801
+    outs:
+    - path: logs
+      hash: md5
+      md5: 476947edc81586c62718e5e178163be7.dir
+      size: 17112
+      nfiles: 10
+  evaluation:
+    cmd: python3 src/eval.py data=birddata evaluation=bird_eval
+    deps:
+    - path: configs/data/birddata.yaml
+      hash: md5
+      md5: 55e500c6e4d28fda08d8aba1974131b3
+      size: 289
+    - path: configs/data/dogbreed.yaml
+      hash: md5
+      md5: ca6b0f4b492678cdad7632126ab02f86
+      size: 287
+    - path: configs/evaluation/bird_eval.yaml
+      hash: md5
+      md5: 1ba8bd56a7cca35d1a822067b3a526d7
+      size: 244
+    - path: configs/evaluation/dogbreed_eval.yaml
+      hash: md5
+      md5: 6d44773c6a41a03b625698f924b86162
+      size: 249
+    - path: data
+      hash: md5
+      md5: 97508e4c8a46a85e3cd8e35c13f8a74e.dir
+      size: 66665399
+      nfiles: 1581
+    - path: src/eval.py
+      hash: md5
+      md5: d3ed4831cec4cbbd926140cc08f758d6
+      size: 2595
+    outs:
+    - path: evaluations
+      hash: md5
+      md5: 7d028379c343b8f085d1d21cfb14cd09.dir
+      size: 113
+      nfiles: 1
+  inference:
+    cmd: python3 src/infer.py data=birddata inference=bird_infer
+    deps:
+    - path: configs/data/birddata.yaml
+      hash: md5
+      md5: 55e500c6e4d28fda08d8aba1974131b3
+      size: 289
+    - path: configs/data/dogbreed.yaml
+      hash: md5
+      md5: ca6b0f4b492678cdad7632126ab02f86
+      size: 287
+    - path: configs/inference/bird_infer.yaml
+      hash: md5
+      md5: 519885bf313acc09a4769db4dd502320
+      size: 269
+    - path: configs/inference/dogbreed_infer.yaml
+      hash: md5
+      md5: 666f83a2e7b120779e714019626d998f
+      size: 230
+    - path: data
+      hash: md5
+      md5: 97508e4c8a46a85e3cd8e35c13f8a74e.dir
+      size: 66665399
+      nfiles: 1581
+    - path: src/infer.py
+      hash: md5
+      md5: 3d919b06ac867411c16b5803247066cd
+      size: 3446
+    outs:
+    - path: predictions
+      hash: md5
+      md5: 31e62f36a389dcc19865b29c450fe211.dir
+      size: 3989543
+      nfiles: 10
