@@ -23,19 +23,34 @@ class ImageClassifier:
         os.makedirs(f"checkpoints/{self.cfg.gradio_deployment.name}", exist_ok=True)
         os.makedirs(f"labels/{self.cfg.gradio_deployment.name}", exist_ok=True)
 
-        # Updated download_model_from_s3 call with output_location
-        download_model_from_s3(
-            local_file_name=self.cfg.ckpt_path.split(os.path.sep)[-1],
-            bucket_name=self.cfg.gradio_deployment.s3_model_bucket_location,
-            s3_folder=self.cfg.gradio_deployment.s3_model_bucket_folder_location,
-            output_location=f"checkpoints/{self.cfg.gradio_deployment.name}"
-        )
-        # Download and load labels
-        self.labels = read_s3_file(
-            file_name=self.cfg.gradio_deployment.s3_labels_file_name,
-            bucket_name=self.cfg.gradio_deployment.s3_labels_bucket_location,
-            s3_folder=self.cfg.gradio_deployment.s3_labels_bucket_folder_location
-        ).strip().split('\n')
+        # Only download if model doesn't exist
+        model_path = f"checkpoints/{self.cfg.gradio_deployment.name}/{self.cfg.ckpt_path.split(os.path.sep)[-1]}"
+        if not os.path.exists(model_path):
+            download_model_from_s3(
+                local_file_name=self.cfg.ckpt_path.split(os.path.sep)[-1],
+                bucket_name=self.cfg.gradio_deployment.s3_model_bucket_location,
+                s3_folder=self.cfg.gradio_deployment.s3_model_bucket_folder_location,
+                output_location=f"checkpoints/{self.cfg.gradio_deployment.name}"
+            )
+        else:
+            print(f"Model already exists locally at {model_path}")
+
+        # Only download labels if they don't exist
+        labels_path = f"labels/{self.cfg.gradio_deployment.name}/{self.cfg.gradio_deployment.s3_labels_file_name}"
+        if not os.path.exists(labels_path):
+            self.labels = read_s3_file(
+                file_name=self.cfg.gradio_deployment.s3_labels_file_name,
+                bucket_name=self.cfg.gradio_deployment.s3_labels_bucket_location,
+                s3_folder=self.cfg.gradio_deployment.s3_labels_bucket_folder_location
+            ).strip().split('\n')
+            # Save labels locally
+            with open(labels_path, 'w') as f:
+                f.write('\n'.join(self.labels))
+        else:
+            print(f"Labels already exist locally at {labels_path}")
+            # Read labels from local file
+            with open(labels_path, 'r') as f:
+                self.labels = f.read().strip().split('\n')
 
         # Load checkpoint to get stored parameters
         checkpoint = torch.load(self.cfg.ckpt_path, map_location=self.device)
