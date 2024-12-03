@@ -8,7 +8,7 @@ defaults:
   - override /logger: default
 
 # Experiment name
-name: bird_200_mobilenetv3_small_optimized
+name: bird_200_mobilenetv3_large_optimized
 
 seed: 42
 
@@ -29,7 +29,7 @@ trainer:
 
 model:
   _target_: src.model_builder.timm_classifier.TimmClassifier
-  base_model: mobilenetv3_small_100
+  base_model: mobilenetv3_large_100
   num_classes: 200
   pretrained: true
   learning_rate: 3e-4
@@ -53,7 +53,7 @@ callbacks:
     save_top_k: 3
     save_last: True
 
-tags: ["bird_200", "classification", "mobilenetv3_small"]
+tags: ["bird_200", "classification", "mobilenetv3_large"]
 
 s3_model_save_location: "pytorch-model-emlov4"
 ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${name}/best_model.ckpt
