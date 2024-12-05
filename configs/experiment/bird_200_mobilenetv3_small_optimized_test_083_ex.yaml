@@ -55,5 +55,5 @@ callbacks:
 
 tags: ["bird_200", "classification", "mobilenetv3_small"]
 
-s3_model_save_location: "pytorch-model-emlov4"
+s3_model_save_location: "pytorch-model-gradio"
 ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${name}/best_model.ckpt

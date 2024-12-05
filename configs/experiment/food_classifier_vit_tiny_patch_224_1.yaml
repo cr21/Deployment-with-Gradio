@@ -14,18 +14,18 @@ seed: 42
 
 data:
   batch_size: 64
-  num_workers: 4
+  num_workers: 1
   pin_memory: true
 
 # Increase the number of epochs for better training
 trainer:
   min_epochs: 1
   max_epochs: 1
-  gradient_clip_val: 0.5
-  precision: 16
-  accelerator: 'gpu'
+  # gradient_clip_val: 0.5
+  # precision: 16
+  # accelerator: 'gpu'
   devices: 1
-  accumulate_grad_batches: 8
+  # accumulate_grad_batches: 1
 
 # Adjust learning rate and batch size
 model:
@@ -58,5 +58,5 @@ callbacks:
 # Tags for experiment tracking
 tags: ["food_101", "classification", "vit_tiny"]
 
-s3_model_save_location: "pytorch-model-emlov4-gradio"
+s3_model_save_location: "pytorch-model-gradio"
 ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${name}/best_model.ckpt

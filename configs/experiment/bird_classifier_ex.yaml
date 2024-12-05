@@ -46,5 +46,5 @@ callbacks:
 # Tags for experiment tracking
 tags: ["birddata", "classification", "vit_tiny_patch16_224"]
 
-s3_model_save_location: "pytorch-model-emlov4"
+s3_model_save_location: "pytorch-model-gradio"
 ckpt_path: ${oc.env:PROJECT_ROOT}/checkpoints/${name}/best_model.ckpt
