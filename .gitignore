@@ -171,3 +171,5 @@ cython_debug/
 #/predictions
 data
 !configs/data
+
+traced_models/

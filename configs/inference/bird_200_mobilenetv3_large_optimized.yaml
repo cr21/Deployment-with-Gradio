@@ -8,4 +8,4 @@ inference_glob_pattern: "*/*/*.jpg"
 
 s3_model_save_location: "pytorch-model-gradio"
 s3_model_bucket_folder_location: "bird_200_mobilenetv3_large_optimized"
-s3_prediction_bucket_location: "pytorch-model-emlov4-predictions"
+s3_prediction_bucket_location: "pytorch-gradio-predictions"

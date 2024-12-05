@@ -6,3 +6,4 @@ name: ${gradio_deployment.name}
 ckpt_path: checkpoints/${gradio_deployment.name}/best_model.ckpt
 accelerator: ${gradio_deployment.accelerator}
 labels_dir: labels/${gradio_deployment.name}/labels.txt
+trace_model_path: traced_models/${gradio_deployment.name}/model.pt
