@@ -20,7 +20,7 @@ data:
 # Increase the number of epochs for better training
 trainer:
   min_epochs: 1
-  max_epochs: 1 #30
+  max_epochs: 30
   gradient_clip_val: 1.0
   precision: 16
   accelerator: 'gpu'
