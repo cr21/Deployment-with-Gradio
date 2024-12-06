@@ -92,11 +92,12 @@ demo = gr.Interface(
     inputs=gr.Image(),
     outputs=gr.Label(num_top_classes=5),
     title="Food classifier",
-    description=f"Upload an image to classify Food Images\n\nAvailable food classes:\n{table_html}",
+    description="Upload an image to classify Food Images",
     examples=[
         ["sample_data/apple_pie.jpg"],
         ["sample_data/pizza.jpg"]
-    ]
+    ],
+    article=f"Available food classes:\n{table_html}"
 )
 
 
