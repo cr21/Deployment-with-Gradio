@@ -242,9 +242,8 @@ jobs:
       - name: RUN Dokcer image
         run: |
           nvidia-smi  # Add this to verify GPU is visible
-          docker run --gpus all --runtime=nvidia --shm-size=4g \
-          -e NVIDIA_VISIBLE_DEVICES=all \
-          -e NVIDIA_DRIVER_CAPABILITIES=all \
+          sudo systemctl restart  docker
+          docker run --gpus all \
           --env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
           --env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
           --env HF_TOKEN=${{ secrets.HF_TOKEN }} \
