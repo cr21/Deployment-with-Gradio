@@ -80,7 +80,7 @@ jobs:
           uv run coverage xml -o coverage.xml  # Generate coverage report in XML format
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4 # Update to the latest version
+        uses: codecov/codecov-action@v5 # Update to the latest version
         with:
           token: ${{ secrets.CODECOV_TOKEN }}  # Use the token from secrets
           files: ./coverage.xml  # Specify the coverage report file
