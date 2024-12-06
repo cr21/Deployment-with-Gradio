@@ -182,7 +182,7 @@ jobs:
           github-token: ${{ secrets.REPO_TOKEN }}
           ec2-image-id: ami-059664cee4c4a07e9
           ec2-instance-type: g6.xlarge
-          subnet-id: subnet-04e7dada262d6a4ef
+          subnet-id: subnet-0501494307f30f3bc
           security-group-id: sg-0d91ba7ab3bba3ca8
           pre-runner-script: |
                 distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \
