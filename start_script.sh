@@ -14,7 +14,7 @@ nvidia-smi
 echo "Start Training!!!!"
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 #python3 src/train.py experiment=bird_classifier_ex  trainer=cpu +trainer.log_every_n_steps=1
-python3 src/train.py experiment=food_classifier_vit_small_patch_16_224  trainer=gpu +trainer.log_every_n_steps=10
+python3 src/train.py experiment=food_classifier_vit_small_patch_16_224  trainer=gpu +trainer.log_every_n_steps=5
 echo "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 aws s3 ls s3://pytorch-model-gradio/food_101_vit_small/ --recursive
 #aws s3 ls pytorch-model-emlov4-predictions/bird_classification --recursive
@@ -35,6 +35,7 @@ echo "START TRACING"
 python3 src/script.py inference=food_101_vit_small ++IMG_W=224 ++IMG_H=224
 
 mkdir -p .gradio/traced_models/food_101_vit_small
+echo "cp traced_models/food_101_vit_small/model.pt  .gradio/traced_models/food_101_vit_small/"
 cp traced_models/food_101_vit_small/model.pt  .gradio/traced_models/food_101_vit_small/
 
 echo "START DEPLOYING"
