@@ -1,3 +1,6 @@
+nvidia-smi
+# Inside the container
+python3 -c "import torch; print(torch.cuda.is_available())"
 dvc pull -r s3_store
 ls data
 apt update

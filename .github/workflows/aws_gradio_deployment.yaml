@@ -190,6 +190,8 @@ jobs:
                 && curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
                 sudo apt-get update
                 sudo apt-get install -y nvidia-docker2
+                sudo nvidia-ctk runtime configure --runtime=docker
+                sudo systemctl restart  docker
   pull-docker-and-train:
     name: Build and pull Docker Image
     needs: 
@@ -241,8 +243,8 @@ jobs:
       - name: RUN Dokcer image
         run: |
           nvidia-smi  # Add this to verify GPU is visible
-          sudo nvidia-ctk runtime configure --runtime=docker
-          sudo systemctl restart  docker
+          #sudo nvidia-ctk runtime configure --runtime=docker
+          #sudo systemctl restart  docker
           docker run --gpus all --shm-size=4g  \
           --env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
           --env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
