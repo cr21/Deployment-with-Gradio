@@ -1,0 +1,280 @@
+name: aws-test-train
+on:
+  push:
+    branches:
+      - main
+jobs:
+  start-runner:
+    name: Start self-hosted EC2 runner for checking test coverage
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.REPO_TOKEN }}
+          ec2-image-id: ami-0b243823f5aea4760
+          ec2-instance-type: t3.xlarge
+          subnet-id: subnet-0fbb0a4e45e210015
+          security-group-id: sg-087286314d96dddd3
+          pre-runner-script: |
+                sudo apt update -y && \ 
+                sudo apt-get install -y unzip
+                curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"  # Download AWS CLI
+                unzip awscliv2.zip  # Unzip the downloaded file
+                sudo ./aws/install  # Install AWS CLI
+                sudo ./aws/install --update
+                curl -fsSL https://get.docker.com -o get-docker.sh  # Download Docker installation script
+                sh get-docker.sh  # Run the installation script
+                # Set up AWS credentials and region
+                # mkdir -p ~/.aws && \
+                # echo "[default]" > ~/.aws/config && \
+                # echo "region=us-east-1" >> ~/.aws/config && \  # Set the region
+                # echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials && \
+                # echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+
+
+  upload-code-coverage:
+    name: run tests and upload test coverage
+    needs: start-runner
+    runs-on: ${{ needs.start-runner.outputs.label }}
+    env:
+      HOME: /home/runner
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}  # Set AWS Access Key ID
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # Set AWS Secret Access Key
+      AWS_DEFAULT_REGION: us-east-1 
+    steps:
+      - name: Hello World
+        run: echo 'Hello World! Chirag!'
+      - name: AWS check if aws credentilas are set up correctly or not
+        run: aws s3 ls
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.4.22"  # Pin to a specific version of uv
+
+      - name: Set up Python 3.12
+        run: uv python install --version 3.12 # Install Python 3.12 with uv
+
+      - name: Install dependencies
+        run: |
+          UV_INDEX_URL=https://download.pytorch.org/whl/cpu \
+          UV_EXTRA_INDEX_URL=https://pypi.org/simple \
+          uv sync --all-extras --dev  # Install dependencies with uv
+
+      - name: Run tests with coverage
+        run: |
+          uv run coverage run -m pytest  || true  # Run tests with coverage
+          uv run coverage xml -o coverage.xml  # Generate coverage report in XML format
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4 # Update to the latest version
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}  # Use the token from secrets
+          files: ./coverage.xml  # Specify the coverage report file
+          fail_ci_if_error: true
+          slug: ${{ github.repository }}
+
+  build-and-push-docker:
+    name: Build and Push Docker Image
+    needs: 
+      - start-runner
+      - upload-code-coverage
+    runs-on: ${{ needs.start-runner.outputs.label }}
+    steps:
+      # - name: Install unzip utility
+      #   run: |
+      #     sudo apt-get install -y unzip
+      # - name: Set up AWS CLI
+      #   run: |
+      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"  # Download AWS CLI
+      #     unzip awscliv2.zip  # Unzip the downloaded file
+      #     sudo ./aws/install  # Install AWS CLI
+      #     # Optionally, you can update the AWS CLI if needed
+      #     # sudo ./aws/install --update
+      # - name: Set up Docker
+      #   run: |
+      #     curl -fsSL https://get.docker.com -o get-docker.sh  # Download Docker installation script
+      #     sh get-docker.sh  # Run the installation script
+      #     # sudo systemctl start docker
+      #     # sudo systemctl enable docker
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  # Use your AWS access key
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # Use your AWS secret key
+          aws-region: us-east-1  # Specify your AWS region
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 575108919357.dkr.ecr.us-east-1.amazonaws.com
+
+      - name: Build Docker image
+        run: |
+          df -h
+          export DOCKER_BUILDKIT=1
+          docker system prune -a -f
+          docker build -t cr/gradio-classifier .  # Adjust the path to your Dockerfile if necessary
+
+      - name: Tag Docker image
+        run: |
+          docker tag cr/gradio-classifier:latest 575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/gradio-classifier:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push 575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/gradio-classifier:latest
+
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start-runner # required to get output from the start-runner job
+      - upload-code-coverage # required to wait when the main job is done
+      - build-and-push-docker
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.REPO_TOKEN }}
+          label: ${{ needs.start-runner.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
+  start-training-runner:
+    name: Start self-hosted EC2 runner for Training 
+    needs:
+      - stop-runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Start EC2  Training runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.REPO_TOKEN }}
+          ec2-image-id: ami-0a12ed3c7e9791206
+          ec2-instance-type: g4dn.xlarge
+          subnet-id: subnet-04e7dada262d6a4ef
+          security-group-id: sg-0d91ba7ab3bba3ca8
+          # pre-runner-script: |
+          #       # sudo apt update -y && \ 
+          #       # sudo apt-get install -y unzip
+          #       # curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"  # Download AWS CLI
+          #       # unzip awscliv2.zip  # Unzip the downloaded file
+          #       # sudo ./aws/install  # Install AWS CLI
+          #       # sudo ./aws/install --update
+          #       # curl -fsSL https://get.docker.com -o get-docker.sh  # Download Docker installation script
+          #       # sh get-docker.sh  # Run the installation script
+          #       # Set up AWS credentials and region
+          #       # mkdir -p ~/.aws && \
+          #       # echo "[default]" > ~/.aws/config && \
+          #       # echo "region=us-east-1" >> ~/.aws/config && \  # Set the region
+          #       # echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> ~/.aws/credentials && \
+          #       # echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> ~/.aws/credentials
+  pull-docker-and-train:
+    name: Build and pull Docker Image
+    needs: 
+      - start-training-runner
+    runs-on: ${{ needs.start-training-runner.outputs.label }}
+    steps:
+      # - name: Install unzip utility
+      #   run: |
+      #     sudo apt-get install -y unzip
+      # - name: Set up AWS CLI
+      #   run: |
+      #     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"  # Download AWS CLI
+      #     unzip awscliv2.zip  # Unzip the downloaded file
+      #     sudo ./aws/install  # Install AWS CLI
+      #     # Optionally, you can update the AWS CLI if needed
+      #     # sudo ./aws/install --update
+      # - name: Set up Docker
+      #   run: |
+      #     curl -fsSL https://get.docker.com -o get-docker.sh  # Download Docker installation script
+      #     sh get-docker.sh  # Run the installation script
+      #     # sudo systemctl start docker
+      #     # sudo systemctl enable docker
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}  # Use your AWS access key
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}  # Use your AWS secret key
+          aws-region: us-east-1  # Specify your AWS region
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 575108919357.dkr.ecr.us-east-1.amazonaws.com
+
+      # - name: Build Docker image
+      #   run: |
+      #     df -h
+      #     export DOCKER_BUILDKIT=1
+      #     docker system prune -a -f
+      #     docker build -t cr/emlo-docker-plt:latest .  # Adjust the path to your Dockerfile if necessary
+
+      # - name: Tag Docker image
+      #   run: |
+      #     docker tag cr/emlo-docker-plt:latest 575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/emlo-docker-plt:latest
+
+      - name: Pull Docker image to ECR
+        run: |
+           docker pull 575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/gradio-classifier:latest
+      - name: RUN Dokcer image
+        run: |
+          docker run  --gpus all --shm-size=4g \
+          --env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
+          --env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
+          --env HF_TOKEN=${{ secrets.HF_TOKEN }} \
+          --entrypoint /bin/bash \
+          575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/gradio-classifier:latest \
+          -c "sh start_script.sh"
+
+  stop-last-runner:
+    name: Stop last EC2 runner
+    needs: 
+      - start-training-runner
+      - pull-docker-and-train  # Ensure this runs after the Docker job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  # Specify your AWS region
+
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.REPO_TOKEN }}
+          label: ${{ needs.start-training-runner.outputs.label }}  # Use the label from the training runner
+          ec2-instance-id: ${{ needs.start-training-runner.outputs.ec2-instance-id }}  # Use the instance ID from the training runner

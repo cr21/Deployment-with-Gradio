@@ -38,6 +38,7 @@ echo "START DEPLOYING"
 python3 -c "import huggingface_hub; huggingface_hub.login(token='$HF_TOKEN')"
 cd .gradio
 gradio deploy
+echo "DEPLOYMENT DONE!!!!"
 
 # s3://pytorch-model-gradio/food_101_vit_tiny/
 #aws s3 ls s3://pytorch-model-gradio/food_101_vit_tiny/ --recursive
