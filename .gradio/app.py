@@ -54,13 +54,45 @@ class FoodImageClassifier:
 # Create classifier instance
 classifier = FoodImageClassifier()
 
+# Format available classes into HTML table - 10 per row
+formatted_classes = ['<tr>']
+for i, label in enumerate(classifier.labels):
+    if i > 0 and i % 10 == 0:
+        formatted_classes.append('</tr><tr>')
+    formatted_classes.append(f'<td>{label}</td>')
+formatted_classes.append('</tr>')
+
+# Create HTML table with styling
+table_html = f"""
+<style>
+    .food-classes-table {{
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0;
+    }}
+    .food-classes-table td {{
+        padding: 6px;
+        text-align: center;
+        border: 1px solid var(--border-color-primary);
+        font-size: 14px;
+        color: var(--body-text-color);
+    }}
+    .food-classes-table tr td {{
+        background-color: var(--background-fill-primary);
+    }}
+</style>
+<table class="food-classes-table">
+    {''.join(formatted_classes)}
+</table>
+"""
+
 # Create Gradio interface
 demo = gr.Interface(
     fn=classifier.predict,
     inputs=gr.Image(),
     outputs=gr.Label(num_top_classes=5),
     title="Food classifier",
-    description="Upload an image to classify Food Images",
+    description=f"Upload an image to classify Food Images\n\nAvailable food classes:\n{table_html}",
     examples=[
         ["sample_data/apple_pie.jpg"],
         ["sample_data/pizza.jpg"]
@@ -69,4 +101,4 @@ demo = gr.Interface(
 
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(share=True)
