@@ -74,8 +74,7 @@ def main(cfg: DictConfig):
     results_dir.mkdir(parents=True, exist_ok=True)
     remove_files(os.path.dirname(cfg.ckpt_path),pattern="*.ckpt")
     download_model_from_s3(cfg.ckpt_path, cfg.inference.s3_model_bucket_location, cfg.inference.s3_model_bucket_folder_location)
-    print(f"ckptpath {ckpt_path}")
-    # Load model
+    print(f"ckptpath {ckpt_path}")    # Load model
     log.info(f"Loading model from {ckpt_path}")
     model = hydra.utils.instantiate(cfg.model)
     model = model.__class__.load_from_checkpoint(ckpt_path)

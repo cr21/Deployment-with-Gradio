@@ -21,10 +21,14 @@ sudo nvidia-ctk runtime configure --runtime=docker
 sudo systemctl restart docker
 
 docker run --gpus all \
-    --env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}  \
+    --env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}  --env HF_TOKEN=${HF_TOKEN}\
     -it --entrypoint /bin/bash \
     575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/emlo-docker-plt:latest \
     -c "sh start_script.sh"
 
 # docker run --gpus all  -it  -w /app  --entrypoint   /bin/bash 575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/emlo-docker-plt:latest -c "sh start_script.sh"
 
+
+#--shm-size=1g 
+
+# docker run --gpus all  --shm-size=4g    --env AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} --env AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} --env HF_TOKEN=${HF_TOKEN}  -it --entrypoint /bin/bash 575108919357.dkr.ecr.us-east-1.amazonaws.com/cr/gradio-classifier

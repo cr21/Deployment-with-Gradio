@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 
 class FoodImageClassifier:
-    def __init__(self, model_dir="traced_models/food_101_vit_tiny",
+    def __init__(self, model_dir="traced_models/food_101_vit_small",
                      model_file_name="model.pt",
                      labels_path='food_101_classes.txt'):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        
+        print(self.device)
         # Load the traced model
         model_full_path = Path(model_dir,model_file_name)
         self.model = torch.jit.load(model_full_path)

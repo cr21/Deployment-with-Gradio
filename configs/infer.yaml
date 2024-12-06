@@ -13,3 +13,4 @@ num_samples: 10
 img_size: 224
 task_name: "inference"
 log_task_name: "infer_${data.name}"
+
